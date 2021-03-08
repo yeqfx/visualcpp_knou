@@ -1,8 +1,10 @@
 #include <windows.h>
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK ChildWndProc(HWND, UINT, WPARAM, LPARAM);
 HINSTANCE g_hInst;
 LPCTSTR lpszClass = L"HelloAPI";
+LPCTSTR ChildClassName = L"ChildWin";
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
 {
@@ -14,13 +16,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
 	WndClass.cbClsExtra = 0;
 	WndClass.cbWndExtra = 0;
 	WndClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	WndClass.hCursor = LoadCursor(NULL, IDC_WAIT);
+	WndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	WndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	WndClass.hInstance = hInstance;
 	WndClass.lpfnWndProc = (WNDPROC)WndProc;
 	WndClass.lpszClassName = lpszClass;
 	WndClass.lpszMenuName = NULL;
 	WndClass.style = CS_HREDRAW | CS_VREDRAW;
+	RegisterClass(&WndClass);
+
+	WndClass.lpfnWndProc = ChildWndProc;
+	WndClass.lpszClassName = ChildClassName;
 	RegisterClass(&WndClass);
 
 	hWnd = CreateWindow(lpszClass,			//윈도우클래스 이름
@@ -55,9 +61,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage,
 		EndPaint(hWnd, &ps);
 		return 0;
 	}
+	case WM_CREATE:
+	{
+		HWND hChildWnd = CreateWindow(
+			ChildClassName,						//윈도우클래스 이름
+			L"차일드 윈도우",						//윈도우타이틀
+			WS_OVERLAPPEDWINDOW | WS_CHILD,		//윈도우스타일
+			150, 150,							//윈도우가 보일때 X Y좌표
+			260, 200,							//윈도우의 폭과 높이				
+			hWnd,								//부모윈도우 핸들
+			(HMENU)2000,						//차일드 윈도우가 가지는 메뉴핸들
+			g_hInst,							//인스턴스핸들
+			(LPVOID)NULL						//여분의 데이터
+		);
+		if (!hChildWnd) return -1;
+
+		ShowWindow(hChildWnd, SW_SHOW);			//차일드 윈도우를 화면에 보여준다.
+		return 0;
+	}
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
 	}
+	return(DefWindowProc(hWnd, iMessage, wParam, lParam));
+}
+
+LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT iMessage,	WPARAM wParam, LPARAM lParam)
+{
 	return(DefWindowProc(hWnd, iMessage, wParam, lParam));
 }
